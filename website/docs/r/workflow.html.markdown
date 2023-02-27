@@ -331,6 +331,39 @@ resource "newrelic_workflow" "workflow-example" {
 }
 ```
 
+### An example of a tagged workflow
+
+```hcl
+resource "newrelic_workflow" "example" {
+  name = "workflow-example"
+  muting_rules_handling = "NOTIFY_ALL_ISSUES"
+  
+  issues_filter {
+  name = "Filter-name"
+  type = "FILTER"
+      predicate {
+        attribute = "accumulations.tag.team"
+        operator = "EXACTLY_MATCHES"
+        values = [ "my_team" ]
+      }
+  }
+  
+  destination {
+    channel_id = newrelic_notification_channel.webhook-channel.id
+    notification_triggers = [ "ACTIVATED" ]
+  }
+}
+
+resource "newrelic_entity_tags" "workflow_tags" {
+  guid = newrelic_workflow.example.guid
+
+  tag {
+    key    = "my-tag"
+    values = ["my-tag-value", "my-other-value"]
+  }
+}
+```
+
 ## Additional Information
 More details about the workflows can be found [here](https://docs.newrelic.com/docs/alerts-applied-intelligence/applied-intelligence/incident-workflows/incident-workflows/).
 

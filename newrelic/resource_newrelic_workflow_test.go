@@ -349,6 +349,27 @@ func TestNewRelicWorkflow_BooleanFlags_DisableOnCreation(t *testing.T) {
 	})
 }
 
+func TestNewRelicWorkflow_EntityTags(t *testing.T) {
+	channelResourceName := "foo"
+	workflowName := acctest.RandString(10)
+	channelResources := testAccNewRelicChannelConfigurationEmail(channelResourceName)
+	workflowResource := testAccNewRelicOnlyWorkflowConfigurationMinimal(workflowName, channelResourceName)
+	entityTags := testAccNewRelicWorkflowEntityTags("newrelic_workflow.foo")
+
+	resource.ParallelTest(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheckEnvVars(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccNewRelicWorkflowDestroy,
+		Steps: []resource.TestStep{
+
+			// Test: Create workflow with tags
+			{
+				Config: channelResources + workflowResource + entityTags,
+			},
+		},
+	})
+}
+
 func testAccNewRelicWorkflowConfigurationMinimal(accountID int, name string) string {
 	return fmt.Sprintf(`
 resource "newrelic_notification_destination" "foo" {
@@ -725,6 +746,19 @@ resource "newrelic_workflow" "foo" {
   }
 }
 `, accountID, name)
+}
+
+func testAccNewRelicWorkflowEntityTags(workflowResourceName string) string {
+	return fmt.Sprintf(`
+resource "newrelic_entity_tags" "workflow_tags" {
+  guid = %[1]s.guid
+
+  tag {
+    key    = "my-key"
+    values = ["my-value", "my-other-value"]
+  }
+}`, workflowResourceName)
+
 }
 
 func testAccNewRelicWorkflowDestroy(s *terraform.State) error {
